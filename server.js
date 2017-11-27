@@ -6,7 +6,7 @@ app.listen(9000);
 
 function handler(req, res) {
     console.log('handler')
-    fs.readFile(__dirname + '/realTime.html',
+    fs.readFile(__dirname + '/realTime1.html',
         function(err, data) {
             if (err) {
                 res.writeHead(500);

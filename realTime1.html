@@ -39,58 +39,68 @@
 				.attr("transform", "translate(0," + height + ")").call(xAxis);
 		var yAxisGroup = innerSpace.append("g").attr("class", "y axis").call(yAxis);
 
+
+
 		
-		// var update = function(newData) {		
-		// 	// Append new data
-		// 	data = data.concat(newData);
-		// 	var maxNumberOfRecords = 10;
+		var update = function(newData) {		
+			// Append new data
+			data = data.concat(newData);
+			var maxNumberOfRecords = 10;
 			
-		// 	// Remove old data (i.e., avoid overflows)
-		// 	while (data.length > maxNumberOfRecords) {
-		// 		delete data.shift();
-		// 	}
+			// Remove old data (i.e., avoid overflows)
+			while (data.length > maxNumberOfRecords) {
+				delete data.shift();
+			}
 
-		// 	var result = _.map(data, function(value, index) {
-		// 		return value.date.toString();
-		// 	})
+			var result = _.map(data, function(value, index) {
+				return value.date;
+			})
 
-		// 	console.log(result);
+			var xAxisScale = d3.scale.linear().domain(_.map(data, function(value, index) {
+				return value.date;
+			})).range([0, width / data.length]);
 
-		// 	// Setup scaling
-		// 	// var xAxisScale = d3.scale.linear().domain(_.map(data, function(value, index) {
-		// 	// 	return value.date;
-		// 	// })).range([0, width / data.length]);
+			xAxis.scale(xAxisScale);
 
-		// 	// yScale add domain
-		// 	// var yAxisScale = d3.scale.linear().domain([0,2]).range([height, 0])
+			d3.select(".x").transition().duration(10).call(xAxis);
 
-		// 	// Setup x, y axis
-		// 	// var xAxis = d3.svg.axis().scale(xAxisScale).orient("bottom");
-		// 	// var yAxis = d3.svg.axis().scale(yAxisScale).orient("left");
+			// console.log(result);
 
-		// 	// var xAxisGroup = innerSpace.append("g").attr("class", "x axis")
-		// 	// 				.attr("transform", "translate(0," + height + ")")
-		// 	// 				.call(xAxis);
-		// 	// var yAxisGroup = innerSpace.append("g").attr("class", "y axis")
-		// 	// 				.call(yAxis);
+			// Setup scaling
+			// var xAxisScale = d3.scale.linear().domain(_.map(data, function(value, index) {
+			// 	return value.date;
+			// })).range([0, width / data.length]);
 
-		// 	// //Data Join
-		// 	// var record = innerSpace.selectAll("circle").data(data)
+			// yScale add domain
+			// var yAxisScale = d3.scale.linear().domain([0,2]).range([height, 0])
 
-		// 	// record.enter().append("circle").attr("class", "dot")
-		// 	// .attr("r", 3.5)
-		// 	// .attr("cx", width)
-		// 	// .attr("cy", height);
+			// Setup x, y axis
+			// var xAxis = d3.svg.axis().scale(xAxisScale).orient("bottom");
+			// var yAxis = d3.svg.axis().scale(yAxisScale).orient("left");
+
+			// var xAxisGroup = innerSpace.append("g").attr("class", "x axis")
+			// 				.attr("transform", "translate(0," + height + ")")
+			// 				.call(xAxis);
+			// var yAxisGroup = innerSpace.append("g").attr("class", "y axis")
+			// 				.call(yAxis);
+
+			//Data Join
+			var record = innerSpace.selectAll("circle").data(data)
+
+			record.enter().append("circle").attr("class", "dot")
+			.attr("r", 3.5)
+			.attr("cx", width)
+			.attr("cy", height);
 
 
-		// 	// record.transition().attr("cx", function(d, i) {
-		// 	// 	return Math.floor(xAxisScale(d.date));
-		// 	// }).attr("cy", function(d, i) {
-		// 	// 	return yAxisScale(d.value);
-		// 	// }).style("fill", "red");
+			record.transition().attr("cx", function(d, i) {
+				return Math.floor(xAxisScale(d.date));
+			}).attr("cy", function(d, i) {
+				return yAxisScale(d.value);
+			}).style("fill", "red");
 
-		// 	// record.exit().remove();
-		// }
+			record.exit().remove();
+		}
 
 	</script>
 </body>
