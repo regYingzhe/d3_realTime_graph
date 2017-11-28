@@ -39,6 +39,8 @@
 				.attr("transform", "translate(0," + height + ")").call(xAxis);
 		var yAxisGroup = innerSpace.append("g").attr("class", "y axis").call(yAxis);
 
+		var text = innerSpace.append("g").attr("class", "dot_label").selectAll("text");
+
 
 
 		
@@ -62,7 +64,12 @@
 
 			xAxis.scale(xAxisScale);
 
-			d3.select(".x").transition().duration(10).call(xAxis);
+			var result = _.map(data, function(value, index) {
+				return value.date.toString();
+			})
+
+			console.log(result);
+
 
 			// console.log(result);
 
@@ -99,6 +106,23 @@
 				return yAxisScale(d.value);
 			}).style("fill", "red");
 
+			var textLabel = text.data(data).enter().append("text")
+							.attr("x", function(d, i) {
+								return xAxisScale(d.date);
+							})
+							.attr("y", function(d, i) {
+								return yAxisScale(d.value) - 15;
+							})
+							.attr("id", "text_label")
+							.attr("font-family", "sans-serif")
+							.attr("font-size", "22px")
+							.attr("fill", "black")
+							.attr("text-anchor", "middle")
+							.text(function(d, i) { return d.date.toString()})
+
+			innerSpace.select("#text_label").data(data).transition()
+			.attr("x", function(d, i) {return xAxisScale(d.date)})
+			
 			record.exit().remove();
 		}
 

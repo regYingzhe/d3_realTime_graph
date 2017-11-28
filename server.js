@@ -22,7 +22,7 @@ function handler(req, res) {
 io.sockets.on('connection', function(socket) {
     console.log('handle connection');
 
-    var periodInMilliseconds = 400;
+    var periodInMilliseconds = 2000;
     var timeoutId = -1;
 
     /**
