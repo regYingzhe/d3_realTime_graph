@@ -49,6 +49,7 @@ io.on('connection', function(socket) {
      */
     var generateServerRequest1 = function() {
         console.log('generate server request');
+
         socket.emit('serverRequest1', {
             date: new Date(),
             value: Math.pow(Math.random(), 2)
@@ -58,12 +59,15 @@ io.on('connection', function(socket) {
     };
 
     var generateServerRequest2 = function() {
+        console.log('generate server request');
+
         socket.emit('serverRequest2', {
             date: new Date(),
-            value: Math.pow(Math.random(), 2)
+            value: Math.pow(Math.random(), 2) 
         });
+
         timeoutId2 = setTimeout(generateServerRequest2, periodInMilliseconds);
-    }
+    };
 
     socket.on('disconnect', handleDisconnect);
 

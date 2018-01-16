@@ -50,14 +50,28 @@
 		}
 
 		.area {
-			fill: #DEF1FE;
-			stroke: #80ADD9;
+			fill: #8BC4EB;
+			opacity: 0.65;
+			/*stroke: #80ADD9;*/
 		}
 
-		circle {
-			stroke: #005BB3;
-			opacity: 0.5;
-			fill: #C2E3F9;
+		.area2 {
+			fill: #76D0A0;
+			opacity: 0.1;
+			/*stroke: #80ADD9;*/
+		}
+
+		.circle1 {
+			/*stroke: #005BB3;*/
+			fill: #8BC4EB;
+			opacity: 0.65;
+			
+		}
+
+		.circle2 {
+			fill: #76D0A0;
+			opacity: 0.1;
+			
 		}
 	</style>
 	<body>
@@ -67,20 +81,36 @@
 		<script type="text/javascript">
 
 			var handleServerRequest1 = function(data) {
-				// console.log({
-				// 	source: 'server',
-				// 	action: 'request',
-				// 	data: data
-				// });
+				console.log({
+					source: 'server',
+					action: 'request',
+					data: data
+				});
+				
 				data.date = new Date(data.date);
-				update(data);
+				update1(data);
+			}
+
+			var handleServerRequest2 = function(data) {
+				console.log({
+					source: 'server',
+					action: 'request',
+					data: data
+				});
+				
+				data.date = new Date(data.date);
+				update2(data);
 			}
 
 			var socket = io();
 			socket.on('serverRequest1', handleServerRequest1);
+			socket.on('serverRequest2', handleServerRequest2);
+
+			var dotRadius = 2;
 
 
 			var data = [];
+			var data2 = [];
 			var svgViewPort = d3.select("body").append("svg").attr("width", 1062).attr("height", 500);
 			var margin = {top: 50, right: 50, bottom: 50, left: 50},
 				width = 1062 - margin.left - margin.right,
@@ -91,37 +121,91 @@
 			var parseDate = d3.time.format("%d-%b-%y").parse;
 			
 			var xAxisScale = d3.time.scale().range([0, width]);
-			var yAxisScale = d3.scale.linear().range([height, 0]).domain([0, 1]);
+			var yAxisScale = d3.scale.linear().range([height, 0]);
+
+			var xAxisScale2 = d3.time.scale().range([0, width]);
+			var yAxisScale2 = d3.scale.linear().range([height, 0]);
+
 			
 			var xAxis = d3.svg.axis().scale(xAxisScale).orient("bottom");
 			var yAxis = d3.svg.axis().scale(yAxisScale).orient("left");
+
+			var xAxis2 = d3.svg.axis().scale(xAxisScale2).orient("bottom");
+			var yAxis2 = d3.svg.axis().scale(yAxisScale2).orient("left");
 
 			var axisSignal = 0;		
 			var line;
 			var path;
 			var dot;
+			var area;
 			var dataContainer = innerSpace.append("g").attr("class", "dataEntries");
 			var areaContainer = innerSpace.append("g").attr("class", "intensity");
+			var maxNumberOfRecords = 8;
 
-			var update = function(newData) {
-				var maxNumberOfRecords = 8;
+			var axisSignal2 = 0;		
+			var line2;
+			var path2;
+			var dot2;
+			var area2;
+			var dataContainer2 = innerSpace.append("g").attr("class", "dataEntries2");
+			var areaContainer2 = innerSpace.append("g").attr("class", "intensity2");
 
+			var inputData = [{"color": "#8BC4EB", "name": "Intensity", "opacity": 0.65}, 
+								{"color": "#76D0A0", "name": "normal", "opacity": 0.1}];
+
+			var legendContainer = innerSpace.append("g").attr("class", "legendContainer");
+
+
+			var update2 = function(newData) {
+				console.log("Inside request Two");
+				data2 = data2.concat(newData);
+				while (data2.length > maxNumberOfRecords) {
+					delete data2.shift();
+				}
+				if (data2.length == maxNumberOfRecords) {
+					data2.forEach(function(d) {
+						d.value = +d.value;
+					})
+
+					xAxisScale2.domain(d3.extent(data2, function(d) {
+						return d.date;
+					}))
+					xAxis2.scale(xAxisScale2);
+					yAxisScale2.domain(d3.extent(data2, function(d) {
+						return d.value;
+					}))
+					yAxis2.scale(yAxisScale2);
+
+					area2 = d3.svg.area().interpolate("monotone")
+					.x(function(d) { return xAxisScale2(d.date)})
+					.y1(function(d) { return yAxisScale2(d.value)})
+					.y0(height);
+
+					if (axisSignal2 == 0) {
+						axisSignal2 = 1;
+						drawingDot2(data2);
+						drawingArea2(data2);
+					}  else {
+						removePrevArea2();
+						updateDrawingDot2(data2);
+						drawingArea2(data2);
+					}
+				}
+			}
+
+			var update1 = function(newData) {
 				// Append new data
+				console.log("Inside request One");
 				data = data.concat(newData);
-				
 				
 				// Remove old data (i.e., avoid overflows)
 				while (data.length > maxNumberOfRecords) {
 					delete data.shift();
 				}
 
-				if (data.length == maxNumberOfRecords) {
-					// console.log("data length has reached to the maxNumberOfRecords");
-					// console.log("This is the data", data)
-					// console.log("First element in data", data[5].date)
-					// console.log("The type of the data object is", typeof data[5].date.toString())
-					
+				if (data.length == maxNumberOfRecords) {					
 					// Convert value string into int
+					createLegend();
 					d3.select(".indicator").style("display", "none");
 					data.forEach(function(d) {
 						d.value = +d.value;
@@ -131,8 +215,12 @@
 					xAxisScale.domain(d3.extent(data, function(d) {
 						return d.date;
 					}));
+					yAxisScale.domain(d3.extent(data, function(d) {
+						return d.value;
+					}))
 					// Applying the updated xAxis Scale
 					xAxis.scale(xAxisScale);
+					yAxis.scale(yAxisScale);
 
 
 					// Create line generator function, telling d3 how to grab the data and interpolate drawing the line
@@ -146,7 +234,6 @@
 						drawingAxis();
 						drawingDot(data);
 						drawingArea(data);
-						
 					} else {
 						updatexAxis();
 						removePrevArea();
@@ -158,6 +245,31 @@
 				}
 			}
 		</script>
+
+		<script type="text/javascript">
+			var createLegend = function() {
+				var legend = legendContainer.selectAll(".legend")
+					.data(inputData)
+					.enter().append("g")
+					.attr("class", "legend")
+					.attr("transform", function(d, i) { return "translate(0," + i * 25 + ")"; })
+
+					legend.append("circle")
+					.attr("r", 10)
+					.attr("cx", width - 18)
+					.style("fill", function(d) { return d.color; })
+					.style("opacity", function(d) { return d.opacity; })
+
+					legend.append("text")
+					.attr("x", width - 35)
+					.attr("y", 0)
+					.attr("dy", ".35em")
+					.style("text-anchor", "end")
+					.text(function(d) { return d.name});
+			}
+		</script>
+
+
 		<script type="text/javascript">
 			var drawingAxis = function() {
 				var xAxisGroup = innerSpace.append("g").attr("class", "x axis")
@@ -168,15 +280,33 @@
 			}
 		</script>
 		<script type="text/javascript">
-			var updatexAxis = function() {
-				d3.select(".x").transition().call(xAxis);
+			var drawingAxis2 = function() {
+				var xAxisGroup2 = innerSpace.append("g").attr("class", "x2 axis2")
+					.attr("transform", "translate(0," + height + ")")
+				var yAxisGroup2 = innerSpace.append("g").attr("class", "y2 axis2")
 			}
 		</script>
+
+		<script type="text/javascript">
+			var updatexAxis = function() {
+				d3.select(".x").transition().call(xAxis);
+				d3.select(".y").transition().call(yAxis);
+			}
+		</script>
+
+
 		<script type="text/javascript">
 			var removePrevArea = function() {
 				d3.select(".area").remove();
 			}
 		</script>
+		<script type="text/javascript">
+			var removePrevArea2 = function() {
+				d3.select(".area2").remove();
+			}
+		</script>
+
+
 		<script type="text/javascript">
 			var updateDrawingDot = function(data) {
 				var dotUpdate = dot.data(data);
@@ -186,12 +316,33 @@
 			}
 		</script>
 		<script type="text/javascript">
+			var updateDrawingDot2 = function(data) {
+				var dotUpdate2 = dot2.data(data);
+				var dotUpdateAttribute2 = dotUpdate2.attr("cx", function(d) { return xAxisScale2(d.date)})
+				.attr("cy", function(d) { return yAxisScale2(d.value)});
+
+			}
+		</script>
+
+
+
+		<script type="text/javascript">
 			var drawingDot = function(data) {
-				dot = dataContainer.selectAll("circle").data(data).enter().append("circle");
-				var dotAttribute = dot.attr("r", 5).attr("cx", function(d) { return xAxisScale(d.date)})
+				dot = dataContainer.selectAll("circle").data(data).enter().append("circle").attr("class", "circle1");
+				var dotAttribute = dot.attr("r", dotRadius).attr("cx", function(d) { return xAxisScale(d.date)})
 					.attr("cy", function(d) { return yAxisScale(d.value)})
 			}
 		</script>
+		<script type="text/javascript">
+			var drawingDot2 = function(data) {
+				dot2 = dataContainer2.selectAll("circle").data(data).enter().append("circle").attr("class", "circle2");
+				var dotAttribute2 = dot2.attr("r", dotRadius).attr("cx", function(d) { return xAxisScale2(d.date)})
+					.attr("cy", function(d) { return yAxisScale2(d.value)})
+			}
+		</script>
+
+
+
 		<script type="text/javascript">
 			var drawingArea = function(data) {
 				path = areaContainer.append("path").attr("class", "area")
@@ -199,5 +350,13 @@
 					.attr("d", area)
 			}
 		</script>
+		<script type="text/javascript">
+			var drawingArea2 = function(data) {
+				path2 = areaContainer2.append("path").attr("class", "area2")
+					.datum(data)
+					.attr("d", area2)
+			}
+		</script>
+
 	</body>
 </html>
