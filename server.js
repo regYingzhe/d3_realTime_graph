@@ -1,54 +1,77 @@
-var app = require('http').createServer(handler),
-    io = require('socket.io').listen(app), //require('socket.io').listen(80);
-    fs = require('fs');
+var app = require('express')();
+var server = require('http').createServer(app);
+var io = require('socket.io')(server);
+var mqtt = require("mqtt");
 
-app.listen(9000);
+var mqttClient = mqtt.connect({host: "localhost", port: 1883});
 
-function handler(req, res) {
-    console.log('handler')
-    fs.readFile(__dirname + '/realTime1.html',
-        function(err, data) {
-            if (err) {
-                res.writeHead(500);
-                return res.end('Error loading index.html');
-            }
+app.get("/intensity", function(req, res) {
+    res.sendFile(__dirname + '/realTime1.html');
+})
 
-            res.writeHead(200);
-            res.end(data);
-        });
-}
+mqttClient.on("connect", function() {
+    console.log("Connect to MQTT Server");
+    mqttClient.subscribe("rpi1/intensity");
+    mqttClient.subscribe("rpi2/intensity");
+})
 
 // Manage connections
-io.sockets.on('connection', function(socket) {
+io.on('connection', function(socket) {
+    
     console.log('handle connection');
+    // mqttClient.on("message", function(topic, message) {
+    //     if (topic == "rpi1/intensity") {
+    //         console.log("Inside position topic");
+    //         try {
+    //             data = JSON.parse(message);
+    //         } catch (e) {
+    //             console.log(e);
+    //         }
+    //     socket.emit('serverRequest1', data);
+    //     }
+    // })
 
-    var periodInMilliseconds = 2000;
-    var timeoutId = -1;
+    
+    var periodInMilliseconds = 1000;
+    var timeoutId1 = -1;
 
     /**
      * Handle "disconnect" events.
      */
     var handleDisconnect = function() {
         console.log('handle disconnect');
-
-        clearTimeout(timeoutId);
+        clearTimeout(timeoutId1);
+        clearTimeout(timeoutId2);
     };
 
     /**
      * Generate a request to be sent to the client.
      */
-    var generateServerRequest = function() {
+    var generateServerRequest1 = function() {
         console.log('generate server request');
-
-        socket.emit('server request', {
+        socket.emit('serverRequest1', {
             date: new Date(),
             value: Math.pow(Math.random(), 2)
         });
 
-        timeoutId = setTimeout(generateServerRequest, periodInMilliseconds);
+        timeoutId1 = setTimeout(generateServerRequest1, periodInMilliseconds);
     };
+
+    var generateServerRequest2 = function() {
+        socket.emit('serverRequest2', {
+            date: new Date(),
+            value: Math.pow(Math.random(), 2)
+        });
+        timeoutId2 = setTimeout(generateServerRequest2, periodInMilliseconds);
+    }
 
     socket.on('disconnect', handleDisconnect);
 
-    timeoutId = setTimeout(generateServerRequest, periodInMilliseconds);
+    timeoutId1 = setTimeout(generateServerRequest1, periodInMilliseconds);
+    timeoutId2 = setTimeout(generateServerRequest2, periodInMilliseconds);
+
+});
+
+server.listen(9000, function(err) {
+    console.log("Server started at port 9000");
 });

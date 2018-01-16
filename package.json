@@ -1,13 +1,22 @@
 {
-    "name": "d3js-with-socket-io-demo",
-    "version": "0.0.1",
-    "private": false,
-    "dependencies": {
-        "http": "*",
-        "nodemon": "^1.12.1",
-        "socket.io": "~0.9.16"
-    },
-    "scripts": {
-        "start": "nodemon server.js"
-    }
+  "name": "d3js-with-socket-io-demo",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.18.2",
+    "express": "^4.16.2",
+    "lodash": "^4.17.4",
+    "mongoose": "^4.13.7",
+    "mongoose-timestamp": "^0.6.0",
+    "mqtt": "^2.14.0",
+    "nodemon": "^1.12.1",
+    "socket.io": "^2.0.4"
+  }
 }
