@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 	<head>
-		<title>realTime</title>
+		<title>Speed</title>
 		<script src="//cdnjs.cloudflare.com/ajax/libs/d3/3.4.2/d3.min.js"></script>
 		<script src="//cdnjs.cloudflare.com/ajax/libs/lodash.js/2.4.1/lodash.min.js"></script>
 		<script src="/socket.io/socket.io.js" type="text/javascript"></script>
@@ -73,6 +73,9 @@
 			opacity: 0.1;
 
 		}
+		.speedLine {
+			fill: none;
+		}
 	</style>
 	<body>
 		<div>
@@ -80,7 +83,7 @@
 		</div>
 		<script type="text/javascript">
 
-			var handleServerRequest1 = function(data) {
+			var handleSpeedRequest = function(data) {
 				console.log({
 					source: 'server',
 					action: 'request',
@@ -91,26 +94,16 @@
 				update1(data);
 			}
 
-			var handleServerRequest2 = function(data) {
-				console.log({
-					source: 'server',
-					action: 'request',
-					data: data
-				});
-
-				data.date = new Date(data.date);
-				update2(data);
-			}
 
 			var socket = io();
-			socket.on('serverRequest1', handleServerRequest1);
-			socket.on('serverRequest2', handleServerRequest2);
+			socket.on('speedRequest', handleSpeedRequest);
+			
 
 			var dotRadius = 2;
 
 
 			var data = [];
-			var data2 = [];
+			
 			var svgViewPort = d3.select("body").append("svg").attr("width", 1062).attr("height", 500);
 			var margin = {top: 50, right: 50, bottom: 50, left: 50},
 				width = 800 - margin.left - margin.right,
@@ -121,17 +114,10 @@
 			var parseDate = d3.time.format("%d-%b-%y").parse;
 
 			var xAxisScale = d3.time.scale().range([0, width]);
-			var yAxisScale = d3.scale.linear().range([height, 0]).domain([0, 0.012]);
-
-			var xAxisScale2 = d3.time.scale().range([0, width]);
-			var yAxisScale2 = d3.scale.linear().range([height, 0]);
-
+			var yAxisScale = d3.scale.linear().range([height, 0]).domain([0, 4]);
 
 			var xAxis = d3.svg.axis().scale(xAxisScale).orient("bottom");
 			var yAxis = d3.svg.axis().scale(yAxisScale).orient("left");
-
-			var xAxis2 = d3.svg.axis().scale(xAxisScale2).orient("bottom");
-			var yAxis2 = d3.svg.axis().scale(yAxisScale2).orient("left");
 
 			var axisSignal = 0;
 			var line;
@@ -139,70 +125,24 @@
 			var dot;
 			var area;
 			var dataContainer = innerSpace.append("g").attr("class", "dataEntries");
-			var areaContainer = innerSpace.append("g").attr("class", "intensity");
-			var maxNumberOfRecords = 100;
+			var lineContainer = innerSpace.append("g").attr("class", "speed");
+			var maxNumberOfRecords = 10;
 
-			var axisSignal2 = 0;
-			var line2;
-			var path2;
-			var dot2;
-			var area2;
-			var dataContainer2 = innerSpace.append("g").attr("class", "dataEntries2");
-			var areaContainer2 = innerSpace.append("g").attr("class", "intensity2");
+			line = d3.svg.line().interpolate("monotone")
+				.x(function(d) { return xAxisScale(d.date); })
+				.y(function(d) { return yAxisScale(d.value); })
+
 
 			// var inputData = [{"color": "#8BC4EB", "name": "Intensity", "opacity": 0.65},
 			// 					{"color": "#76D0A0", "name": "normal", "opacity": 0.1}];
 
-			var inputData = [{"color": "#8BC4EB", "name": "Intensity", "opacity": 0.65}];
+			var inputData = [{"color": "#8BC4EB", "name": "Speed(m/s)", "opacity": 0.65}];
 
 			var legendContainer = innerSpace.append("g").attr("class", "legendContainer");
 
-
-			var update2 = function(newData) {
-				console.log("Inside request Two");
-				data2 = data2.concat(newData);
-				while (data2.length > maxNumberOfRecords) {
-					delete data2.shift();
-				}
-				if (data2.length == maxNumberOfRecords) {
-					data2.forEach(function(d) {
-						d.value = +d.value;
-					})
-
-					xAxisScale2.domain(d3.extent(data2, function(d) {
-						return d.date;
-					}))
-					xAxis2.scale(xAxisScale2);
-
-					var ymax2 = d3.max(d3.extent(data2, function(d) {return d.value}));
-					yAxisScale2.domain([0, ymax2]);
-					// yAxisScale2.domain(d3.extent(data2, function(d) {
-					// 	return d.value;
-					// }))
-					yAxis2.scale(yAxisScale2);
-
-					area2 = d3.svg.area().interpolate("monotone")
-					.x(function(d) { return xAxisScale2(d.date)})
-					.y1(function(d) { return yAxisScale2(d.value)})
-					.y0(height);
-
-					if (axisSignal2 == 0) {
-						axisSignal2 = 1;
-						drawingDot2(data2);
-						drawingArea2(data2);
-					}  else {
-						removePrevArea2();
-						updateDrawingDot2(data2);
-						drawingArea2(data2);
-					}
-				} else if (data.length < maxNumberOfRecords) {
-					d3.select(".indicator").style("display", "inline");
-				}
-			}
-
 			var update1 = function(newData) {
 				// Append new data
-				console.log("Inside request One");
+				console.log("Inside request speed function");
 				data = data.concat(newData);
 
 				// Remove old data (i.e., avoid overflows)
@@ -229,21 +169,19 @@
 					// yAxis.scale(yAxisScale);
 
 					// Create line generator function, telling d3 how to grab the data and interpolate drawing the line
-					area = d3.svg.area().interpolate("monotone")
-						.x(function(d) { return xAxisScale(d.date); })
-						.y1(function(d) { return yAxisScale(d.value); })
-						.y0(height);
+
+
 					// First time to draw the line
 					if (axisSignal == 0) {
 						axisSignal = 1;
 						drawingAxis();
 						drawingDot(data);
-						drawingArea(data);
+						drawingLine(data);
 					} else {
 						updatexAxis();
-						removePrevArea();
+						removePrevLine();
 						updateDrawingDot(data);
-						drawingArea(data);
+						drawingLine(data);
 					}
 				} else if (data.length < maxNumberOfRecords) {
 					d3.select(".indicator").style("display", "inline");
@@ -284,13 +222,6 @@
 					.call(yAxis);
 			}
 		</script>
-		<script type="text/javascript">
-			var drawingAxis2 = function() {
-				var xAxisGroup2 = innerSpace.append("g").attr("class", "x2 axis2")
-					.attr("transform", "translate(0," + height + ")")
-				var yAxisGroup2 = innerSpace.append("g").attr("class", "y2 axis2")
-			}
-		</script>
 
 		<script type="text/javascript">
 			var updatexAxis = function() {
@@ -301,13 +232,8 @@
 
 
 		<script type="text/javascript">
-			var removePrevArea = function() {
-				d3.select(".area").remove();
-			}
-		</script>
-		<script type="text/javascript">
-			var removePrevArea2 = function() {
-				d3.select(".area2").remove();
+			var removePrevLine = function() {
+				d3.select(".speedLine").remove();
 			}
 		</script>
 
@@ -320,15 +246,6 @@
 
 			}
 		</script>
-		<script type="text/javascript">
-			var updateDrawingDot2 = function(data) {
-				var dotUpdate2 = dot2.data(data);
-				var dotUpdateAttribute2 = dotUpdate2.attr("cx", function(d) { return xAxisScale2(d.date)})
-				.attr("cy", function(d) { return yAxisScale2(d.value)});
-
-			}
-		</script>
-
 
 
 		<script type="text/javascript">
@@ -338,28 +255,14 @@
 					.attr("cy", function(d) { return yAxisScale(d.value)})
 			}
 		</script>
-		<script type="text/javascript">
-			var drawingDot2 = function(data) {
-				dot2 = dataContainer2.selectAll("circle").data(data).enter().append("circle").attr("class", "circle2");
-				var dotAttribute2 = dot2.attr("r", dotRadius).attr("cx", function(d) { return xAxisScale2(d.date)})
-					.attr("cy", function(d) { return yAxisScale2(d.value)})
-			}
-		</script>
-
 
 
 		<script type="text/javascript">
-			var drawingArea = function(data) {
-				path = areaContainer.append("path").attr("class", "area")
+			var drawingLine = function(data) {
+				path = lineContainer.append("path")
 					.datum(data)
-					.attr("d", area)
-			}
-		</script>
-		<script type="text/javascript">
-			var drawingArea2 = function(data) {
-				path2 = areaContainer2.append("path").attr("class", "area2")
-					.datum(data)
-					.attr("d", area2)
+					.attr("class", "speedLine")
+					.attr("d", line)
 			}
 		</script>
 
