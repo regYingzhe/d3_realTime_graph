@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 	<head>
-		<title>realTime</title>
+		<title>Intensity</title>
 		<script src="//cdnjs.cloudflare.com/ajax/libs/d3/3.4.2/d3.min.js"></script>
 		<script src="//cdnjs.cloudflare.com/ajax/libs/lodash.js/2.4.1/lodash.min.js"></script>
 		<script src="/socket.io/socket.io.js" type="text/javascript"></script>
@@ -121,14 +121,13 @@
 			var parseDate = d3.time.format("%d-%b-%y").parse;
 
 			var xAxisScale = d3.time.scale().range([0, width]);
-			var yAxisScale = d3.scale.linear().range([height, 0]).domain([0, 0.012]);
-
-			var xAxisScale2 = d3.time.scale().range([0, width]);
-			var yAxisScale2 = d3.scale.linear().range([height, 0]);
-
+			var yAxisScale = d3.scale.linear().range([height, 0]).domain([0, 0.012/2]);
 
 			var xAxis = d3.svg.axis().scale(xAxisScale).orient("bottom");
 			var yAxis = d3.svg.axis().scale(yAxisScale).orient("left");
+
+			var xAxisScale2 = d3.time.scale().range([0, width]);
+			var yAxisScale2 = d3.scale.linear().range([height, 0]);
 
 			var xAxis2 = d3.svg.axis().scale(xAxisScale2).orient("bottom");
 			var yAxis2 = d3.svg.axis().scale(yAxisScale2).orient("left");
@@ -141,6 +140,9 @@
 			var dataContainer = innerSpace.append("g").attr("class", "dataEntries");
 			var areaContainer = innerSpace.append("g").attr("class", "intensity");
 			var maxNumberOfRecords = 100;
+			var breathingThres = 0.0025;
+			var maxBelowBreathingThres = 0.003;
+			var maxAboveBreathingThres = 0.012;
 
 			var axisSignal2 = 0;
 			var line2;
@@ -222,11 +224,24 @@
 					xAxisScale.domain(d3.extent(data, function(d) {
 						return d.date;
 					}));
-					// var ymax1 = d3.max(d3.extent(data, function(d) {return d.value}));
-					// yAxisScale.domain([0, ymax1]);
-					// Applying the updated xAxis Scale
+
 					xAxis.scale(xAxisScale);
-					// yAxis.scale(yAxisScale);
+
+					var ymax1 = d3.max(d3.extent(data, function(d) { return d.value; }));
+					if (ymax1 <= breathingThres) {
+						yAxisScale.domain([0, maxBelowBreathingThres]);
+						yAxis.scale(yAxisScale);
+					} else {
+						yAxisScale.domain([0, maxAboveBreathingThres]);
+						yAxis.scale(yAxisScale);
+					}
+
+					// if (d.value < breathingThres) {
+					// 	var ymax1 = d3.max(d3.extent(data, function(d) {return d.value}));
+					// 	yAxisScale.domain([0, ymax1]);
+					// } else {
+					// 	yAxisScale.domain([0, 0.012]);
+					// }
 
 					// Create line generator function, telling d3 how to grab the data and interpolate drawing the line
 					area = d3.svg.area().interpolate("monotone")
