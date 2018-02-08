@@ -3,9 +3,12 @@ var server = require('http').createServer(app);
 var io = require('socket.io')(server);
 var mqtt = require("mqtt");
 
-var host = "192.168.1.196"
+var host = "104.197.173.194";
+var port = "1883";
+var username = "toggmqtt";
+var password = "togg4ever";
 
-var mqttClient = mqtt.connect({host: host, port: 1883});
+var mqttClient = mqtt.connect({host: host, port: port, username: username, password: password});
 
 app.get("/intensity", function(req, res) {
     res.sendFile(__dirname + '/realTime1.html');
